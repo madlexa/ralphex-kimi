@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Stub kimi CLI for testing ralphex-kimi wrapper
+# Controlled via KIMI_STUB_SCENARIO environment variable
+
+set -euo pipefail
+
+scenario="${KIMI_STUB_SCENARIO:-success_array}"
+
+# consume stdin (the prompt)
+prompt_data=$(cat)
+
+case "$scenario" in
+  success_array)
+    echo '{"role":"assistant","content":[{"type":"text","text":"Task completed successfully."}]}'
+    ;;
+  success_string)
+    echo '{"role":"assistant","content":"String content from Kimi."}'
+    ;;
+  success_null)
+    echo '{"role":"assistant","content":null}'
+    ;;
+  success_no_content)
+    echo '{"role":"assistant"}'
+    ;;
+  success_with_think)
+    echo '{"role":"assistant","content":[{"type":"think","think":"Analyzing..."},{"type":"text","text":"Done."}]}'
+    ;;
+  error_exit_1)
+    echo "LLM not set" >&2
+    exit 1
+    ;;
+  error_exit_75)
+    echo "Rate limit exceeded" >&2
+    exit 75
+    ;;
+  resume_session)
+    echo "To resume this session: kimi -r abc123" >&2
+    echo '{"role":"assistant","content":[{"type":"text","text":"Hello."}]}'
+    ;;
+  bad_json)
+    echo '{bad json}'
+    ;;
+  echo_prompt)
+    # Echo the received prompt back as JSON text
+    escaped=$(echo "$prompt_data" | jq -Rs '.[:-1]')
+    echo "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":$escaped}]}"
+    ;;
+  streaming)
+    echo '{"role":"assistant","content":[{"type":"text","text":"first"}]}'
+    sleep 0.3
+    echo '{"role":"assistant","content":[{"type":"text","text":"second"}]}'
+    ;;
+  multi_turn)
+    echo '{"role":"assistant","content":[{"type":"text","text":"First response."}]}'
+    echo '{"role":"tool","content":[{"type":"text","text":"tool result"}]}'
+    echo '{"role":"assistant","content":[{"type":"text","text":"Second response."}]}'
+    ;;
+  *)
+    echo "Unknown scenario: $scenario" >&2
+    exit 1
+    ;;
+esac
